@@ -1,3 +1,7 @@
+v1.7: ยอดรับที่ยืนยันไม่รวมออเดอร์ที่ซ่อน/ลบจากรายการหลัก แต่ยังเก็บประวัติการรับเงินไว้
+เพิ่มไฟล์ finance.js ใหม่ และปรับ admin.js ให้นับยอดถูกต้องทั้ง Dashboard และ Realtime
+ตรวจสอบว่า index.html, admin.js, finance.js, bootstrap.js อยู่ใน root ของ GitHub repository
+
 Volleyball Jersey Pre-order v1.6 - Flat deploy edition
 
 ไฟล์ทุกไฟล์อยู่ที่ Root ใน ZIP โดยไม่มี src/ assets/ หรือโฟลเดอร์ครอบอีกชั้น

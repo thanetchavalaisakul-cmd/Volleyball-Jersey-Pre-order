@@ -3,6 +3,7 @@ import { buyerPdfMarkup } from './public.js';
 import { downloadExcel, downloadProductionPdf } from './exports.js';
 import { SIZE_ORDER, sortOrderItems } from './sizes.js';
 import { canAdminArchive } from './order-actions.js';
+import { totalConfirmedActiveRevenue } from './finance.js';
 const selectedOrders = new Set();
 
 export async function loadAdminOrders() {
@@ -24,9 +25,9 @@ function tabs() {
 export function renderAdmin() {
   if(!state.admin) return `<div class="shell small-shell">${titleSection('ADMIN ACCESS','เข้าสู่ระบบผู้ดูแล','เฉพาะผู้ที่ได้รับสิทธิ์ใน Supabase เท่านั้น')}<section class="panel login-panel"><div class="login-icon">🔐</div><div class="field"><label>อีเมลผู้ดูแล</label><input type="email" id="admin-email" autocomplete="username" placeholder="admin@example.com"></div><div class="field"><label>รหัสผ่าน</label><input type="password" id="admin-password" autocomplete="current-password"></div><button data-action="admin-login" class="btn navy full-btn">เข้าสู่ระบบแอดมิน</button><p class="muted tiny">ไม่มีการสมัครบัญชีแอดมินสาธารณะ เจ้าของระบบเป็นผู้กำหนดสิทธิ์เท่านั้น</p></section></div>`;
   const orders=state.orders;
-  const paid=[...orders,...state.archivedOrders].filter(o=>o.payment_status==='paid');
+  const confirmedRevenue=totalConfirmedActiveRevenue(orders);
   const pieces=orders.filter(o=>o.order_status!=='cancelled').reduce((t,o)=>t+(o.order_items||[]).reduce((s,i)=>s+i.quantity,0),0);
-  return `<div class="shell">${titleSection('CONTROL CENTER','ระบบจัดการคำสั่งซื้อ','ผู้ดูแล: '+state.admin.display_name)}<div class="flex-between admin-welcome"><span class="tag good">● ADMIN VERIFIED</span><button data-action="logout" class="btn light small">ออกจากระบบ</button></div><div class="metrics"><div class="metric"><small>ออเดอร์ทั้งหมด</small><strong>${orders.length}</strong></div><div class="metric"><small>จำนวนเสื้อที่สั่ง</small><strong>${pieces}</strong></div><div class="metric"><small>รอตรวจสลิป</small><strong>${orders.filter(o=>o.payment_status==='under_review').length}</strong></div><div class="metric"><small>ยอดรับที่ยืนยัน (รวมรายการลบ)</small><strong>${money(paid.reduce((s,o)=>s+Number(o.total_amount),0))}</strong></div></div>${tabs()}<div id="admin-panel">${renderAdminPanel()}</div></div>`;
+  return `<div class="shell">${titleSection('CONTROL CENTER','ระบบจัดการคำสั่งซื้อ','ผู้ดูแล: '+state.admin.display_name)}<div class="flex-between admin-welcome"><span class="tag good">● ADMIN VERIFIED</span><button data-action="logout" class="btn light small">ออกจากระบบ</button></div><div class="metrics"><div class="metric"><small>ออเดอร์ทั้งหมด</small><strong>${orders.length}</strong></div><div class="metric"><small>จำนวนเสื้อที่สั่ง</small><strong>${pieces}</strong></div><div class="metric"><small>รอตรวจสลิป</small><strong>${orders.filter(o=>o.payment_status==='under_review').length}</strong></div><div class="metric"><small>ยอดรับที่ยืนยัน (ไม่รวมรายการที่ลบ)</small><strong>${money(confirmedRevenue)}</strong></div></div>${tabs()}<div id="admin-panel">${renderAdminPanel()}</div></div>`;
 }
 function renderAdminPanel() {
   if(state.adminTab==='orders')return renderOrderList();
@@ -222,7 +223,7 @@ export async function refreshAdminOrders({quiet=true}={}) {
         nums[0].textContent=state.orders.length;
         nums[1].textContent=state.orders.filter(o=>o.order_status!=='cancelled').reduce((sum,o)=>sum+(o.order_items||[]).reduce((q,i)=>q+Number(i.quantity),0),0);
         nums[2].textContent=state.orders.filter(o=>o.payment_status==='under_review').length;
-        nums[3].textContent=money([...state.orders,...state.archivedOrders].filter(o=>o.payment_status==='paid').reduce((sum,o)=>sum+Number(o.total_amount),0));
+        nums[3].textContent=money(totalConfirmedActiveRevenue(state.orders));
       }
     }
     const indicator=$('order-live-indicator');if(indicator){indicator.textContent='● อัปเดต '+new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
